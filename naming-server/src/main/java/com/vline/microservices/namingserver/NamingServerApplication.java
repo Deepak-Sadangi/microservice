@@ -12,7 +12,7 @@ public class NamingServerApplication {
 	private final static Logger logger = LoggerFactory.getLogger(NamingServerApplication.class);
 	public static void main(String[] args) {
 		SpringApplication.run(NamingServerApplication.class, args);
-		logger.info("Application Started...");
+		logger.info("Application Started....");
 	}
 
 }
