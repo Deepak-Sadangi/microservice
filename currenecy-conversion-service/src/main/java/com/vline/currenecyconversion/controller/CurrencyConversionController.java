@@ -1,0 +1,55 @@
+package com.vline.currenecyconversion.controller;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+
+import org.bouncycastle.asn1.ocsp.ResponderID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+import com.vline.currenecyconversion.bean.CurrencyConversion;
+import com.vline.currenecyconversion.proxy.CurrencyExchangeProxy;
+
+@RestController
+public class CurrencyConversionController {
+
+	@Autowired
+	private CurrencyExchangeProxy proxy;
+	
+	@GetMapping("/currency-conversion/from/{from}/to/{to}/quantity/{quantity}")
+	public CurrencyConversion calculateCurrencyConversion(@PathVariable String from, 
+			@PathVariable String to, 
+			@PathVariable BigDecimal quantity) {
+
+		HashMap<String , String> urlVariable = new HashMap<>();
+		urlVariable.put("from", from);
+		urlVariable.put("to", to);
+		
+		ResponseEntity<CurrencyConversion> responseEntity = new RestTemplate().getForEntity("http://localhost:8000/currency-exchange/from/{from}/to/{to}", CurrencyConversion.class, 
+				urlVariable);
+		
+		CurrencyConversion currencyConversion = responseEntity.getBody();
+		
+		return new CurrencyConversion(100001L, from, to, quantity, 
+				currencyConversion.getConversionMultiple(), 
+				quantity.multiply(currencyConversion.getConversionMultiple()) ,
+				currencyConversion.getEnvironment());
+	}
+	
+	@GetMapping("/currency-conversion-feign/from/{from}/to/{to}/quantity/{quantity}")
+	public CurrencyConversion calculateCurrencyConversionFeign(@PathVariable String from, 
+			@PathVariable String to, 
+			@PathVariable BigDecimal quantity) {
+
+		
+		CurrencyConversion currencyConversion =  proxy.retrieveExchangeValue(from, to);
+		return new CurrencyConversion(100001L, from, to, quantity, 
+				currencyConversion.getConversionMultiple(), 
+				quantity.multiply(currencyConversion.getConversionMultiple()) ,
+				currencyConversion.getEnvironment()+ " - Feign");
+	}
+}
